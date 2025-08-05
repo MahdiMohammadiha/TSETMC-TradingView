@@ -1,0 +1,9 @@
+fastapi
+fastapi[standard]
+uvicorn[standard]
+httpx
+python-dotenv
+pydantic
+pydantic-settings
+motor
+lxml
