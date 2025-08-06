@@ -8,6 +8,7 @@ def round_timestamp(ts: int, interval: str = "1m") -> int:
         "15m": 15 * 60_000,
         "30m": 30 * 60_000,
         "1h": 60 * 60_000,
+        "1d": 24 * 60 * 60_000,
     }.get(interval)
 
     if ms is None:
