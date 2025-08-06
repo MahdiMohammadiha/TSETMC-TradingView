@@ -23,5 +23,6 @@ async def fetch_loop(flow_id: int):
 
 
 async def start_all_flows():
-    for flow_id in range(1, 5):
+    flows = [1, 2, 3, 4]
+    for flow_id in flows:
         asyncio.create_task(fetch_loop(flow_id))
