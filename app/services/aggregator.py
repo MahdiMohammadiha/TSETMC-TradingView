@@ -3,8 +3,6 @@ from app.db.mongo import get_db
 
 
 async def update_candles_from_trade(trade, intervals=["1m"]):
-    print(f"💡 update_candles_from_trade called for inscode: {trade.get('InsCode')}")
-
     price = trade["PDrCotVal"]
     volume = trade["QTotTran5J"]
     symbol = str(trade["InsCode"])
