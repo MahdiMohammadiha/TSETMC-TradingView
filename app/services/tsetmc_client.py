@@ -3,7 +3,7 @@ from app.core.config import settings
 from lxml import etree
 
 
-def build_soap_envelope():
+def build_soap_envelope(flow):
     return f"""<?xml version="1.0" encoding="utf-8"?>
     <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                      xmlns:xsd="http://www.w3.org/2001/XMLSchema"
@@ -12,15 +12,15 @@ def build_soap_envelope():
         <TradeLastDay xmlns="http://tsetmc.com/">
           <UserName>{settings.tsetmc_username}</UserName>
           <Password>{settings.tsetmc_password}</Password>
-          <Flow>1</Flow>
+          <Flow>{flow}</Flow>
         </TradeLastDay>
       </soap12:Body>
     </soap12:Envelope>"""
 
 
-async def fetch_trade_data():
+async def fetch_trade_data(flow):
     headers = {"Content-Type": "application/soap+xml; charset=utf-8"}
-    body = build_soap_envelope()
+    body = build_soap_envelope(flow)
 
     async with httpx.AsyncClient(timeout=20) as client:
         response = await client.post(
@@ -35,10 +35,13 @@ async def fetch_trade_data():
     xml_root = etree.fromstring(response.content)
     ns = {
         "soap": "http://www.w3.org/2003/05/soap-envelope",
-        "tsetmc": "http://tsetmc.com/"
+        "tsetmc": "http://tsetmc.com/",
     }
 
-    result_element = xml_root.find(".//soap:Body/tsetmc:TradeLastDayResponse/tsetmc:TradeLastDayResult", namespaces=ns)
+    result_element = xml_root.find(
+        ".//soap:Body/tsetmc:TradeLastDayResponse/tsetmc:TradeLastDayResult",
+        namespaces=ns,
+    )
 
     if result_element is None:
         print("⚠️ TradeLastDayResult not found")
