@@ -1,30 +1,51 @@
-from lxml import etree
+from xml.etree import ElementTree
 from datetime import datetime
-from typing import Optional
 
-def parse_trade_xml(xml_str: str, symbol_id: str) -> Optional[dict]:
+
+def parse_trade_xml(xml_str: str, flow: int = 0) -> list[dict]:
     """
-    Parses the XML and returns the latest daily candle for the given symbol_id.
+    Parse TradeLastDayResult XML from TSETMC into list of dicts.
+    Each trade will have `flow` and `received_at` fields added.
     """
-    root = etree.fromstring(xml_str.encode("utf-8"))
-    trades = root.findall(".//Trade")
+    try:
+        root = ElementTree.fromstring(xml_str)
+    except Exception as e:
+        print("Error parsing XML:", e)
+        return []
 
-    for trade in trades:
-        ins_code = trade.findtext("InsCode")
-        if ins_code != symbol_id:
-            continue
+    trades = []
 
-        date_raw = trade.findtext("DEven")  # e.g. "20250805"
-        time_ts = int(datetime.strptime(date_raw, "%Y%m%d").timestamp()) * 1000
+    # Find <diffgram> inside the root
+    ns_diffgr = "{urn:schemas-microsoft-com:xml-diffgram-v1}"
+    diffgram = root.find(f".//{ns_diffgr}diffgram")
+    if diffgram is None:
+        print("No diffgram found in XML.")
+        return []
 
-        return {
-            "symbol": ins_code,
-            "time": time_ts,
-            "open": int(trade.findtext("PDrCotVal")),
-            "close": int(trade.findtext("PClosing")),
-            "high": int(trade.findtext("PHigh")),
-            "low": int(trade.findtext("PLow")),
-            "volume": int(trade.findtext("ZTotVol")),
-        }
+    trade_root = diffgram.find("TradeLastDay")
+    if trade_root is None:
+        print("No TradeLastDay found in diffgram.")
+        return []
 
-    return None
+    for item in trade_root.findall("TradeLastDay"):
+        data = {}
+        for child in item:
+            tag = child.tag.strip()
+            text = child.text.strip() if child.text else ""
+            data[tag] = try_cast(text)
+
+        data["flow"] = flow
+        data["received_at"] = int(datetime.now().timestamp() * 1000)
+        trades.append(data)
+
+    return trades
+
+
+def try_cast(value: str):
+    """Try to cast values to int or float when possible."""
+    if value.isdigit():
+        return int(value)
+    try:
+        return float(value)
+    except ValueError:
+        return value
