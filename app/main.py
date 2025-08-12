@@ -2,10 +2,18 @@ from fastapi import FastAPI
 from app.routers import chart
 from app.db.mongo import connect_to_mongo
 from app.services.data_fetcher import start_all_flows
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI(title="TSETMC Stream to TradingView")
 app.include_router(chart.router)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
